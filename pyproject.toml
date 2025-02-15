@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "szakdoga"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+opencv-contrib-python = "^4.10.0.84"
+pyqt6 = "^6.7.1"
+numpy = "^2.1.1"
+scipy = "^1.14.1"
+matplotlib = "^3.9.2"
+scikit-learn = "^1.5.2"
+scikit-image = "^0.24.0"
+pandas = "^2.2.3"
+imutils = "^0.5.4"
+pytesseract = "^0.3.13"
+graphviz = "^0.20.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
