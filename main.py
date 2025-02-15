@@ -761,10 +761,10 @@ def arrow_checker(valid_lines, lines, shapes):
 						if 25 <= angle_diff <= 75:
 								arrow_parts.append(fl)
 
-						if len(arrow_parts) >= 2:
-							print(f"🚀 A {checking_line}. vonal egy nyíl!")
-							v.set_line_type("Arrow")
-							v.set_pointing_at(checking_shape)
+					if len(arrow_parts) >= 2:
+						print(f"🚀 A {checking_line}. vonal egy nyíl!")
+						v.set_line_type("Arrow")
+						v.set_pointing_at(checking_shape)
 				else:
 					midpoint_lines = count_lines_near_midpoint(
 						checking_point_x, checking_point_y,
@@ -782,7 +782,7 @@ def arrow_checker(valid_lines, lines, shapes):
 						if 25 <= angle_diff <= 75:
 							arrow_parts.append(mp_line)
 
-					if len(arrow_parts) >= 2:
+					if len(arrow_parts) >= 2 and checking_line == v.get_id():
 						print(f"🚀 A {checking_line}. vonal egy nyíl!")
 						v.set_line_type("Arrow")
 						v.set_pointing_at(checking_shape)
