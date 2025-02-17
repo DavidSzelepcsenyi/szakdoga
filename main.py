@@ -7,6 +7,7 @@ import pytesseract as pytess
 from matplotlib import pyplot as plt
 from PyQt6.QtWidgets import QApplication, QWidget
 import sys
+import xml.dom.minidom
 
 app = QApplication(sys.argv)
 
@@ -19,10 +20,10 @@ app.exec()
 
 # Kép beolvasása
 #img_o = cv2.imread('EK1.png')
-img_o = cv2.imread('EK1_O.png')
+#img_o = cv2.imread('EK1_O.png')
 #img_o = cv2.imread('test1.jpg')
 #img_o = cv2.imread('test2.jpg') kuka
-#img_o = cv2.imread('test3.jpg')
+img_o = cv2.imread('test3.jpg')
 
 img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
@@ -463,7 +464,7 @@ def validate_lines(lines, shapes):
    
 		if shapes[c1].get_shape() == shapes[c2].get_shape():
 			shape = shapes[c1].get_shape()
-			if shape != "Kor" and shape != "vmi4" and shape != "Ismeretlen" : 	
+			if shape != "ellipse;whiteSpace=wrap;html=1;" and shape != "vmi4" and shape != "Ismeretlen" : 	
 				valid = False
    
 		for vonal in valid_lines:
@@ -487,13 +488,13 @@ def validate_lines(lines, shapes):
 		weak1 = True
 		weak2 = True
 		c1,c2 = line.get_connection1(), line.get_connection2()
-		if shapes[c1].get_shape() == "Kor" and shapes[c2].get_shape() == "Kor":
+		if shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
 			for vonal in valid_lines:
 				if vonal.get_connection1() == c1 or vonal.get_connection2() == c1:
-					if shapes[vonal.get_connection1()] != "Kor" or shapes[vonal.get_connection2()] != "Kor":
+					if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
 						weak1 = False
 				if vonal.get_connection1() == c2 or vonal.get_connection2() == c2:
-					if shapes[vonal.get_connection1()] != "Kor" or shapes[vonal.get_connection2()] != "Kor":
+					if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
 						weak2 = False
       
 		if weak1 == True or weak2 == True:
@@ -811,122 +812,139 @@ def check_shapes(shapes,lines):
             else:
                 shape.set_shape("Ismeretlen")
                 
-                
-                
-def make_XML(shapes,lines):
+def make_XML(shapes, lines,all_lines):
 	mxfile = ET.Element(
-	"mxfile",
-	host="app.diagrams.net",
-	agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 OPR/114.0.0.0",
-	version="26.0.14"
+		"mxfile",
+		host="app.diagrams.net",
+		agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 OPR/114.0.0.0",
+		version="26.0.14"
 	)
 	diagram = ET.SubElement(mxfile, "diagram", name="Page-1", id="E5nG0SyLeEiv9CRzUDmB")
 
 	mxGraphModel = ET.SubElement(
-	diagram,
-	"mxGraphModel",
-	dx="2033",
-	dy="1123",
-	grid="1",
-	gridSize="10",
-	guides="1",
-	tooltips="1",
-	connect="1",
-	arrows="1",
-	fold="1",
-	page="1",
-	pageScale="1",
-	pageWidth="900",
-	pageHeight="1200",
-	math="0",
-	shadow="0"
+		diagram,
+		"mxGraphModel",
+		dx="2033",
+		dy="1123",
+		grid="1",
+		gridSize="10",
+		guides="1",
+		tooltips="1",
+		connect="1",
+		arrows="1",
+		fold="1",
+		page="1",
+		pageScale="1",
+		pageWidth="900",
+		pageHeight="1200",
+		math="0",
+		shadow="0"
 	)
 
 	root = ET.SubElement(mxGraphModel, "root")
 
+	ET.SubElement(root, "mxCell", id="0")
+	ET.SubElement(root, "mxCell", id="1", parent="0")
 
-	mxCell = ET.SubElement(root, "mxCell", id="0")
-	mxCell_ = ET.SubElement(root, "mxCell", id="1",parent="0")
 	for elem in shapes:
-     
 		mxCell = ET.SubElement(
-            root, 
-            "mxCell", 
-            attrib={
-                "id": str(elem.get_id() + 2),
-                "value": elem.get_text(),
-                "style": elem.get_shape(),
-                "vertex": "1",
-                "parent": "1"
-            }
-        )
-		mxGeometry = ET.SubElement(
-            mxCell, 
-            "mxGeometry", 
-            attrib={
-                "x": str(elem.get_x()),
-                "y": str(elem.get_y()),
-                "width": str(elem.get_width()),
-                "height": str(elem.get_height()),
-                "as": "geometry"
-            }
-        )
-  
+			root, 
+			"mxCell", 
+			attrib={
+				"id": str(elem.get_id() + 2),
+				"value": elem.get_text(),
+				"style": elem.get_shape(),
+				"vertex": "1",
+				"parent": "1"
+			}
+		)
+		ET.SubElement(
+			mxCell, 
+			"mxGeometry", 
+			attrib={
+				"x": str(elem.get_x()),
+				"y": str(elem.get_y()),
+				"width": str(elem.get_width()),
+				"height": str(elem.get_height()),
+				"as": "geometry"
+			}
+		)
+
 	for line in lines:
-		switched = False
 		cell_attrib = {
 			"id": str(line.get_id() + 2),
-            "value":"",
+			"value": "",
 			"style": "endArrow=none;html=1;rounded=0;",
-			"edge":"1",
-			"parent":"1",
+			"edge": "1",
+			"parent": "1",
 			"source": str(line.get_connection1() + 2),
 			"target": str(line.get_connection2() + 2)
-			
 		}
+
 		p1_attrib = {
-      		"x":str(line.get_x1()),
-			"y":str(line.get_y1()),
+			"x": str(line.get_x1()),
+			"y": str(line.get_y1()),
 			"as": "sourcePoint"
-        }
+		}
 		p2_attrib = {
-      		"x":str(line.get_x2()),
-			"y":str(line.get_y2()),
+			"x": str(line.get_x2()),
+			"y": str(line.get_y2()),
 			"as": "targetPoint"
-        }
+		}
+
 		if line.get_line_type() == "Arrow":
 			cell_attrib["style"] = "endArrow=classic;html=1;rounded=0;"
+			
+			
 		if line.get_pointing_at() > -1:
 			if line.get_connection1() == line.get_pointing_at():
 				cell_attrib["source"], cell_attrib["target"] = cell_attrib["target"], cell_attrib["source"]
-				switched = True
-		if switched:
-			p1_attrib["x"], p1_attrib["y"] = str(line.get_x2()), str(line.get_y2())
-			p2_attrib["x"], p1_attrib["y"] = str(line.get_x1()), str(line.get_y1())
+				p1_attrib["x"], p1_attrib["y"] = str(line.get_x2()), str(line.get_y2())
+				p2_attrib["x"], p1_attrib["y"] = str(line.get_x1()), str(line.get_y1())
     
-		mxCell = ET.SubElement( root, "mxCell", attrib=cell_attrib)
-  
+
+		if int(cell_attrib["source"]) >= len(shapes) + 2:
+			c = all_lines[int(cell_attrib["source"]) - 2 - len(shapes)]
+			if c.get_connection1() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x1()), str(c.get_y1())
+			elif c.get_connection2() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x2()), str(c.get_y2())
+			cell_attrib["source"] = ""
+		elif int(cell_attrib["target"]) >= len(shapes) + 2:
+			c = all_lines[int(cell_attrib["target"]) - 2 - len(shapes)]
+			if c.get_connection1() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x1()), str(c.get_y1())
+			elif c.get_connection2() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x2()), str(c.get_y2())
+			cell_attrib["target"] = ""
+			
+		if line.get_line_type() == "Connector":
+			cell_attrib["source"], cell_attrib["target"] = "", ""
+
+		mxCell = ET.SubElement(root, "mxCell", attrib=cell_attrib)
+
 		mxGeometry = ET.SubElement(
-            mxCell, 
-            "mxGeometry", 
-            attrib={
-                "width": "50",
-                "height": "50",
+			mxCell, 
+			"mxGeometry", 
+			attrib={
+				"width": "50",
+				"height": "50",
 				"relative": "1",
-                "as": "geometry"
-            }
-        )
-		mxPoint1 = ET.SubElement(mxGeometry,"mxPoint", attrib=p1_attrib)
-		mxPoint2 = ET.SubElement(mxGeometry,"mxPoint", attrib=p2_attrib)
+				"as": "geometry"
+			}
+		)
+		ET.SubElement(mxGeometry, "mxPoint", attrib=p1_attrib)
+		ET.SubElement(mxGeometry, "mxPoint", attrib=p2_attrib)
 
-     
-     
-     
-	tree = ET.ElementTree(mxfile)
-	tree.write("result.drawio", encoding="utf-8", xml_declaration=False)
 
-    
-    
+	xml_str = ET.tostring(mxfile, encoding="utf-8")
+	pretty_xml = xml.dom.minidom.parseString(xml_str).toprettyxml(indent="    ")
+
+	with open("result.drawio", "w", encoding="utf-8") as f:
+		f.write(pretty_xml)
+
+	print("✅ Az XML fájl sikeresen elkészült!")
+
 
 prepared, gray = prepare(img)
 
@@ -984,8 +1002,6 @@ check_shapes(shapes_list, valid_lines)
 check_shapes(shapes_list, valid_lines)
 complex_line_checker(valid_lines,lines_data,shapes_list)
 arrow_checker(valid_lines, lines_data, shapes_list)
-make_XML(shapes_list,valid_lines)
-
 
 for o in shapes_list:
     print("------------------")
@@ -1013,4 +1029,6 @@ for o in valid_lines:
 print("..........................")
 print(f"All Lines:{len(lines_data)}")
 print(f"Valid Lines:{len(valid_lines)}")
+make_XML(shapes_list,valid_lines, lines_data)
+
 
