@@ -922,8 +922,9 @@ class EKtoDrawioApp(QWidget):
 
 			sharp = cv2.filter2D(roi, -1, sharpening_kernel)
 
-			text = pytess.image_to_string(sharp) 
-			elem.set_text(text)
+			text = pytess.image_to_string(sharp)
+			clean_text = text.replace("\n", " ").replace("\r", " ")
+			elem.set_text(clean_text)
 	
 	def __init__(self):
 		super().__init__()
