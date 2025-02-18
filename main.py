@@ -158,6 +158,7 @@ class EKtoDrawioApp(QWidget):
 		result = cv2.bitwise_not(opened)
 
 		return result, gray
+
 	def fix_mistake(self, im, gray):
 		
 		mask = cv2.threshold(im, 1, 255, cv2.THRESH_BINARY_INV)[1]
@@ -220,7 +221,6 @@ class EKtoDrawioApp(QWidget):
 
 			approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
 
-			# Az összes pont elemzése az oldalak kiszámításához
 			contour_points = contour.squeeze()
 			side_lengths = []
 			for i in range(len(contour_points)):
@@ -228,7 +228,6 @@ class EKtoDrawioApp(QWidget):
 				p2 = contour_points[(i + 1) % len(contour_points)]
 				side_lengths.append(cv2.norm(p1 - p2))
 
-			# Az átlók és a szögek számítása
 			angles = []
 			for i in range(len(approx)):
 				p1 = approx[i - 2][0]
@@ -287,7 +286,9 @@ class EKtoDrawioApp(QWidget):
 		_, binary_image = cv2.threshold(image, threshold_value, 255, cv2.THRESH_BINARY)
 	
 		return binary_image
+
 	def calculate_angle(self, x1, y1, x2, y2):
+     
 		return math.degrees(math.atan2(y2 - y1, x2 - x1))
 
 	def merge_lines(self, lines, start, distance_threshold=20, angle_threshold=15):
@@ -1022,10 +1023,3 @@ app = QApplication(sys.argv)
 window = EKtoDrawioApp()
 window.show()
 sys.exit(app.exec())
-
-
-
-
-    
-
-
