@@ -5,6 +5,11 @@ import xml.etree.cElementTree as ET
 import numpy as np
 import pytesseract as pytess
 from matplotlib import pyplot as plt
+import sys
+import shutil
+import xml.dom.minidom
+from PyQt6.QtCore import Qt 
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog
 
 # Kép beolvasása
 #img_o = cv2.imread('EK1.png')
@@ -476,7 +481,7 @@ def validate_lines(lines, shapes):
    
 		if shapes[c1].get_shape() == shapes[c2].get_shape():
 			shape = shapes[c1].get_shape()
-			if shape != "Kor" and shape != "vmi4" and shape != "Ismeretlen" : 	
+			if shape != "ellipse;whiteSpace=wrap;html=1;" and shape != "vmi4" and shape != "Ismeretlen" : 	
 				valid = False
    
 		for vonal in valid_lines:
@@ -500,13 +505,13 @@ def validate_lines(lines, shapes):
 		weak1 = True
 		weak2 = True
 		c1,c2 = line.get_connection1(), line.get_connection2()
-		if shapes[c1].get_shape() == "Kor" and shapes[c2].get_shape() == "Kor":
+		if shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
 			for vonal in valid_lines:
 				if vonal.get_connection1() == c1 or vonal.get_connection2() == c1:
-					if shapes[vonal.get_connection1()] != "Kor" or shapes[vonal.get_connection2()] != "Kor":
+					if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
 						weak1 = False
 				if vonal.get_connection1() == c2 or vonal.get_connection2() == c2:
-					if shapes[vonal.get_connection1()] != "Kor" or shapes[vonal.get_connection2()] != "Kor":
+					if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
 						weak2 = False
       
 		if weak1 == True or weak2 == True:
@@ -732,12 +737,12 @@ def arrow_checker(valid_lines, lines, shapes):
 			else:
 				end_x2, end_y2 = v.get_x2(), v.get_y2()
 
-			if c1 < len(shapes) and shapes[c1].get_shape() == "Paralelogramma":
+			if c1 < len(shapes) and shapes[c1].get_shape() == "rhombus;whiteSpace=wrap;html=1;":
 				checking_point_x, checking_point_y = end_x2, end_y2
 				checking_shape = c2
 				if not c2_belongs_to_original:
 					checking_line = connected_line
-			if c2 < len(shapes) and shapes[c2].get_shape() == "Paralelogramma":
+			if c2 < len(shapes) and shapes[c2].get_shape() == "rhombus;whiteSpace=wrap;html=1;":
 				checking_point_x, checking_point_y = end_x1, end_y1
 				checking_shape = c1
 				if not c1_belongs_to_original:
@@ -756,8 +761,6 @@ def arrow_checker(valid_lines, lines, shapes):
 						found_lines.append(line)
 
 				
-				print(f"Talált vonalak száma a {v.get_id()}. vonalnak {checking_point_x},{checking_point_y} pontnál: {len(found_lines)}")
-				print(f"Kapcsolatok: {c1}, {c2}, Vonal ahhol van: {checking_line}")
 				main_line = lines[checking_line-len(shapes)]
     
 				min_distance, closest_point = closest_border_distance(checking_point_x, checking_point_y, shapes[checking_shape])
@@ -774,10 +777,10 @@ def arrow_checker(valid_lines, lines, shapes):
 						if 25 <= angle_diff <= 75:
 								arrow_parts.append(fl)
 
-						if len(arrow_parts) >= 2:
-							print(f"🚀 A {checking_line}. vonal egy nyíl!")
-							v.set_line_type("Arrow")
-							v.set_pointing_at(checking_shape)
+					if len(arrow_parts) >= 2:
+						print(f"🚀 A {checking_line}. vonal egy nyíl!")
+						v.set_line_type("Arrow")
+						v.set_pointing_at(checking_shape)
 				else:
 					midpoint_lines = count_lines_near_midpoint(
 						checking_point_x, checking_point_y,
@@ -795,7 +798,7 @@ def arrow_checker(valid_lines, lines, shapes):
 						if 25 <= angle_diff <= 75:
 							arrow_parts.append(mp_line)
 
-					if len(arrow_parts) >= 2:
+					if len(arrow_parts) >= 2 and checking_line == v.get_id():
 						print(f"🚀 A {checking_line}. vonal egy nyíl!")
 						v.set_line_type("Arrow")
 						v.set_pointing_at(checking_shape)
@@ -815,61 +818,172 @@ def check_shapes(shapes,lines):
                 if shape.get_id() == line.get_connection2() and line.get_connection1() >= 0:
                     evidence.append(shapes[line.get_connection1()])
             for item in evidence:
-                if item.get_shape() in ["Haromszog", "Paralelogramma", "Kor"]:
+                if item.get_shape() in ["Haromszog", "rhombus;whiteSpace=wrap;html=1;", "ellipse;whiteSpace=wrap;html=1;"]:
                     negyzet += 1
                 else:
                     para +=1
             if para > negyzet:
-                shape.set_shape("Paralelogramma")
+                shape.set_shape("rhombus;whiteSpace=wrap;html=1;")
             elif para < negyzet:
-                shape.set_shape("Negyzet")
+                shape.set_shape("rounded=0;whiteSpace=wrap;html=1;")
             else:
                 shape.set_shape("Ismeretlen")
                 
-                
-                
-def make_XML(shapes,lines):
+def make_XML(shapes, lines,all_lines):
 	mxfile = ET.Element(
-	"mxfile",
-	host="app.diagrams.net",
-	agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 OPR/114.0.0.0",
-	version="26.0.6"
+		"mxfile",
+		host="app.diagrams.net",
+		agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 OPR/114.0.0.0",
+		version="26.0.14"
 	)
 	diagram = ET.SubElement(mxfile, "diagram", name="Page-1", id="E5nG0SyLeEiv9CRzUDmB")
 
 	mxGraphModel = ET.SubElement(
-	diagram,
-	"mxGraphModel",
-	dx="2033",
-	dy="1123",
-	grid="1",
-	gridSize="10",
-	guides="1",
-	tooltips="1",
-	connect="1",
-	arrows="1",
-	fold="1",
-	page="1",
-	pageScale="1",
-	pageWidth="900",
-	pageHeight="1200",
-	math="0",
-	shadow="0"
+		diagram,
+		"mxGraphModel",
+		dx="2033",
+		dy="1123",
+		grid="1",
+		gridSize="10",
+		guides="1",
+		tooltips="1",
+		connect="1",
+		arrows="1",
+		fold="1",
+		page="1",
+		pageScale="1",
+		pageWidth="900",
+		pageHeight="1200",
+		math="0",
+		shadow="0"
 	)
 
 	root = ET.SubElement(mxGraphModel, "root")
 
+	ET.SubElement(root, "mxCell", id="0")
+	ET.SubElement(root, "mxCell", id="1", parent="0")
 
-	mxCell = ET.SubElement(root, "mxCell", id="0")
-	mxCell_ = ET.SubElement(root, "mxCell", id="1")
+	for elem in shapes:
+		mxCell = ET.SubElement(
+			root, 
+			"mxCell", 
+			attrib={
+				"id": str(elem.get_id() + 2),
+				"value": elem.get_text(),
+				"style": elem.get_shape(),
+				"vertex": "1",
+				"parent": "1"
+			}
+		)
+		ET.SubElement(
+			mxCell, 
+			"mxGeometry", 
+			attrib={
+				"x": str(elem.get_x()),
+				"y": str(elem.get_y()),
+				"width": str(elem.get_width()),
+				"height": str(elem.get_height()),
+				"as": "geometry"
+			}
+		)
 
+	for line in lines:
+		cell_attrib = {
+			"id": str(line.get_id() + 2),
+			"value": "",
+			"style": "endArrow=none;html=1;rounded=0;",
+			"edge": "1",
+			"parent": "1",
+			"source": str(line.get_connection1() + 2),
+			"target": str(line.get_connection2() + 2)
+		}
 
-	tree = ET.ElementTree(mxfile)
-	tree.write("filename.drawio", encoding="utf-8", xml_declaration=False)
+		p1_attrib = {
+			"x": str(line.get_x1()),
+			"y": str(line.get_y1()),
+			"as": "sourcePoint"
+		}
+		p2_attrib = {
+			"x": str(line.get_x2()),
+			"y": str(line.get_y2()),
+			"as": "targetPoint"
+		}
 
+		if line.get_line_type() == "Arrow":
+			cell_attrib["style"] = "endArrow=classic;html=1;rounded=0;"
+			
+			
+		if line.get_pointing_at() > -1:
+			if line.get_connection1() == line.get_pointing_at():
+				cell_attrib["source"], cell_attrib["target"] = cell_attrib["target"], cell_attrib["source"]
+				p1_attrib["x"], p1_attrib["y"] = str(line.get_x2()), str(line.get_y2())
+				p2_attrib["x"], p1_attrib["y"] = str(line.get_x1()), str(line.get_y1())
     
-    
 
+		if int(cell_attrib["source"]) >= len(shapes) + 2:
+			c = all_lines[int(cell_attrib["source"]) - 2 - len(shapes)]
+			if c.get_connection1() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x1()), str(c.get_y1())
+			elif c.get_connection2() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x2()), str(c.get_y2())
+			cell_attrib["source"] = ""
+		elif int(cell_attrib["target"]) >= len(shapes) + 2:
+			c = all_lines[int(cell_attrib["target"]) - 2 - len(shapes)]
+			if c.get_connection1() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x1()), str(c.get_y1())
+			elif c.get_connection2() == line.get_id():   
+				p1_attrib["x"], p1_attrib["y"] = str(c.get_x2()), str(c.get_y2())
+			cell_attrib["target"] = ""
+			
+		if line.get_line_type() == "Connector":
+			cell_attrib["source"], cell_attrib["target"] = "", ""
+
+		mxCell = ET.SubElement(root, "mxCell", attrib=cell_attrib)
+
+		mxGeometry = ET.SubElement(
+			mxCell, 
+			"mxGeometry", 
+			attrib={
+				"width": "50",
+				"height": "50",
+				"relative": "1",
+				"as": "geometry"
+			}
+		)
+		ET.SubElement(mxGeometry, "mxPoint", attrib=p1_attrib)
+		ET.SubElement(mxGeometry, "mxPoint", attrib=p2_attrib)
+
+
+	xml_str = ET.tostring(mxfile, encoding="utf-8")
+	pretty_xml = xml.dom.minidom.parseString(xml_str).toprettyxml(indent="    ")
+
+	with open("result.drawio", "w", encoding="utf-8") as f:
+		f.write(pretty_xml)
+
+	print("✅ Az XML fájl sikeresen elkészült!")
+
+def find_text(shapes_list):
+	for elem in shapes_list:
+		x, y, width, height = elem.get_x(), elem.get_y(), elem.get_width(), elem.get_height()
+
+		x1 = max(0, x + 2)  # Bal oldal
+		y1 = max(0, y + 2)  # Felső oldal
+		x2 = min(gray.shape[1], x + width - 2)  # Jobb oldal
+		y2 = min(gray.shape[0], y + height - 2)  # Alsó oldal
+
+		roi = gray[y1:y2, x1:x2]
+		roi = cv2.resize(roi, (0, 0), fx=2.0, fy=2.0)
+
+		sharpening_kernel = np.array([[0, -1, 0],
+									[-1, 5, -1],
+									[0, -1, 0]])
+
+
+		sharp = cv2.filter2D(roi, -1, sharpening_kernel)
+
+		text = pytess.image_to_string(sharp) 
+		elem.set_text(text)
+    
 prepared, gray = prepare(img)
 
 cv2.imshow('Prepared', prepared)
@@ -896,38 +1010,9 @@ cv2.destroyAllWindows()
 lines_data = []
 lines_data = find_lines(lines, shapes_list)
 
-for elem in shapes_list:
-	x, y, width, height = elem.get_x(), elem.get_y(), elem.get_width(), elem.get_height()
- 
- 
-           
-	x1 = max(0, x + 2)  # Bal oldal
-	y1 = max(0, y + 2)  # Felső oldal
-	x2 = min(gray.shape[1], x + width - 2)  # Jobb oldal
-	y2 = min(gray.shape[0], y + height - 2)  # Alsó oldal
-
-	roi = gray[y1:y2, x1:x2]
- 
- 
-	roi = cv2.resize(roi, (0, 0), fx=2.0, fy=2.0)
- 
-	sharpening_kernel = np.array([[0, -1, 0],
-                              [-1, 5, -1],
-                              [0, -1, 0]])
- 
-
-	sharp = cv2.filter2D(roi, -1, sharpening_kernel)
- 
- 
-	text = pytess.image_to_string(sharp) 
-	elem.set_text(text)
-	print(text)
-	cv2.imshow('R.O.I', sharp)
-	cv2.waitKey(0) 
-	cv2.destroyAllWindows()
- 
 
 
+find_text(shapes_list)
 
 lines_data = associate_lines_to_shapes(lines_data, shapes_list)
 valid_lines = validate_lines(lines_data, shapes_list)
@@ -936,8 +1021,6 @@ check_shapes(shapes_list, valid_lines)
 check_shapes(shapes_list, valid_lines)
 complex_line_checker(valid_lines,lines_data,shapes_list)
 arrow_checker(valid_lines, lines_data, shapes_list)
-
-
 
 for o in shapes_list:
     print("------------------")
@@ -965,5 +1048,6 @@ for o in valid_lines:
 print("..........................")
 print(f"All Lines:{len(lines_data)}")
 print(f"Valid Lines:{len(valid_lines)}")
+make_XML(shapes_list,valid_lines, lines_data)
 
 
