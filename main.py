@@ -1,3 +1,5 @@
+import sys
+import shutil
 import math
 import cv2
 import xml
@@ -5,11 +7,43 @@ import xml.etree.cElementTree as ET
 import numpy as np
 import pytesseract as pytess
 from matplotlib import pyplot as plt
-import sys
-import shutil
 import xml.dom.minidom
 from PyQt6.QtCore import Qt 
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QMessageBox, QDialog, QLineEdit
+from PyQt6.QtGui import QPixmap, QImage
+
+class TextEditDialog(QDialog):
+    def __init__(self, roi_image, initial_text, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Szöveg ellenőrzése")
+
+        self.text_edit = QLineEdit(self)  # 🔹 Egy soros szövegmező
+        self.text_edit.setText(initial_text)
+
+        # A kapott ROI képet konvertáljuk Qt formátumba
+        height, width = roi_image.shape
+        bytes_per_line = width
+        q_image = QImage(roi_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
+        pixmap = QPixmap.fromImage(q_image)
+
+        self.image_label = QLabel(self)
+        self.image_label.setPixmap(pixmap)
+
+        self.ok_button = QPushButton("OK", self)
+        self.ok_button.clicked.connect(self.accept)
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Felismert szöveg:"))
+        layout.addWidget(self.text_edit)
+        layout.addWidget(QLabel("Ellenőrzött kép:"))
+        layout.addWidget(self.image_label)
+        layout.addWidget(self.ok_button)
+
+        self.setLayout(layout)
+
+    def get_text(self):
+        return self.text_edit.text()  # 🔹 QLineEdit-ből így kapjuk meg a szöveget
+
 
 class EKtoDrawioApp(QWidget):
     
@@ -425,17 +459,20 @@ class EKtoDrawioApp(QWidget):
 	def validate_lines(self,lines, shapes):
 		valid_lines = []
 		true_valid_lines = []  
+		
 		for line in lines:
 			valid = True
-			c1,c2 = line.get_connection1(), line.get_connection2()
+			c1, c2 = line.get_connection1(), line.get_connection2()
+			
 			if c1 == c2:
 				valid = False
-	
-			if shapes[c1].get_shape() == shapes[c2].get_shape():
+				continue
+			
+			if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == shapes[c2].get_shape():
 				shape = shapes[c1].get_shape()
-				if shape != "ellipse;whiteSpace=wrap;html=1;" and shape != "vmi4" and shape != "Ismeretlen" : 	
+				if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
 					valid = False
-	
+
 			for vonal in valid_lines:
 				con1, con2 = vonal.get_connection1(), vonal.get_connection2()
 
@@ -449,27 +486,32 @@ class EKtoDrawioApp(QWidget):
 						valid = True
 					else:
 						valid = False
-		
+
 			if valid:
 				valid_lines.append(line)
-	
+
 		for line in valid_lines:
-			weak1 = True
-			weak2 = True
-			c1,c2 = line.get_connection1(), line.get_connection2()
-			if shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
+			weak1, weak2 = True, True
+			c1, c2 = line.get_connection1(), line.get_connection2()
+			
+			if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
 				for vonal in valid_lines:
 					if vonal.get_connection1() == c1 or vonal.get_connection2() == c1:
-						if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
-							weak1 = False
+						if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
+							if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
+							shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
+								weak1 = False
 					if vonal.get_connection1() == c2 or vonal.get_connection2() == c2:
-						if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
-							weak2 = False
-		
-			if weak1 == True or weak2 == True:
-				true_valid_lines.append(line)	
+						if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
+							if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
+							shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
+								weak2 = False
+			
+			if weak1 or weak2:
+				true_valid_lines.append(line)
 
 		return true_valid_lines
+
 
 	def complex_line_checker(self, valid_lines, lines, shapes):
 		for i in range(0,len(valid_lines)):
@@ -924,6 +966,12 @@ class EKtoDrawioApp(QWidget):
 
 			text = pytess.image_to_string(sharp)
 			clean_text = text.replace("\n", " ").replace("\r", " ")
+			dialog = TextEditDialog(roi, clean_text)
+			result = dialog.exec()  # Ez blokkolja a futást, amíg a felhasználó nem nyom OK-t
+
+			if result == QDialog.DialogCode.Accepted:
+				clean_text = dialog.get_text()  # Az új szöveg betöltése
+    
 			elem.set_text(clean_text)
 	
 	def __init__(self):
@@ -1018,6 +1066,9 @@ class EKtoDrawioApp(QWidget):
 
 		# 🔹 4. Sikerüzenet
 		QMessageBox.information(self, "Siker", "A fájl feldolgozása befejeződött!\nLétrejött a result.drawio fájl.")
+  
+
+
   
 # Alkalmazás indítása
 app = QApplication(sys.argv)

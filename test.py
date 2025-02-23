@@ -11,12 +11,13 @@ import xml.dom.minidom
 from PyQt6.QtCore import Qt 
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog
 
+
 # Kép beolvasása
 #img_o = cv2.imread('EK1.png')
 #img_o = cv2.imread('EK1_O.png')
-img_o = cv2.imread('test1.jpg')
-#img_o = cv2.imread('test2.jpg') kuka
-#img_o = cv2.imread('test3.jpg')
+#img_o = cv2.imread('test1.jpg')
+#img_o = cv2.imread('test2.jpg')
+img_o = cv2.imread('test3.jpg')
 
 img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
@@ -277,20 +278,20 @@ def determine_shape(image):
 
         shape = "Ismeretlen"
         if len(approx) == 3:
-            shape = "Haromszog"
+            shape = "triangle;whiteSpace=wrap;html=1;"
         elif 5>= len(approx) >= 4:
             # Paralelogramma vagy téglalap/négyszög
             if all(85 <= angle <= 95 for angle in angles[:4]):  # Téglalap/négyszög
                 if abs(side_lengths[0] - side_lengths[2]) < 10 and abs(side_lengths[1] - side_lengths[3]) < 10:
-                    shape = "Negyzet"
+                    shape = "rounded=0;whiteSpace=wrap;html=1;"
                 else:
-                    shape = "Teglalap"
+                    shape = "rounded=0;whiteSpace=wrap;html=1"
             elif len(angles) == 4 and abs(angles[0] - angles[2]) < 10 and abs(angles[1] - angles[3]) < 10:
-                shape = "Paralelogramma"
+                shape = "rhombus;whiteSpace=wrap;html=1;"
             else:
                 shape = "vmi4"
         elif len(approx) > 5:
-            shape = "Kor"
+            shape = "ellipse;whiteSpace=wrap;html=1;"
 
         elem = Element(id, x, y, w, h, shape, "")
         shapes.append(elem)
@@ -471,53 +472,62 @@ def associate_lines_to_shapes(lines_data, shapes_list):
     return lines_data
 
 def validate_lines(lines, shapes):
-	valid_lines = []
-	true_valid_lines = []  
-	for line in lines:
-		valid = True
-		c1,c2 = line.get_connection1(), line.get_connection2()
-		if c1 == c2:
-			valid = False
-   
-		if shapes[c1].get_shape() == shapes[c2].get_shape():
-			shape = shapes[c1].get_shape()
-			if shape != "ellipse;whiteSpace=wrap;html=1;" and shape != "vmi4" and shape != "Ismeretlen" : 	
-				valid = False
-   
-		for vonal in valid_lines:
-			con1, con2 = vonal.get_connection1(), vonal.get_connection2()
-
-			if (c1 == con1 and c2 == con2) or (c1 == con2 and c2 == con1):
-
-				current_length = ((line.get_x2() - line.get_x1()) ** 2 + (line.get_y2() - line.get_y1()) ** 2) ** 0.5
-				existing_length = ((vonal.get_x2() - vonal.get_x1()) ** 2 + (vonal.get_y2() - vonal.get_y1()) ** 2) ** 0.5
-
-				if current_length > existing_length:
-					valid_lines.remove(vonal)
-					valid = True
-				else:
-					valid = False
+    valid_lines = []
+    true_valid_lines = []  
     
-		if valid:
-			valid_lines.append(line)
-   
-	for line in valid_lines:
-		weak1 = True
-		weak2 = True
-		c1,c2 = line.get_connection1(), line.get_connection2()
-		if shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
-			for vonal in valid_lines:
-				if vonal.get_connection1() == c1 or vonal.get_connection2() == c1:
-					if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
-						weak1 = False
-				if vonal.get_connection1() == c2 or vonal.get_connection2() == c2:
-					if shapes[vonal.get_connection1()] != "ellipse;whiteSpace=wrap;html=1;" or shapes[vonal.get_connection2()] != "ellipse;whiteSpace=wrap;html=1;":
-						weak2 = False
-      
-		if weak1 == True or weak2 == True:
-			true_valid_lines.append(line)	
+    for line in lines:
+        valid = True
+        c1, c2 = line.get_connection1(), line.get_connection2()
+        
+        if c1 == c2:
+            valid = False
+            continue  # Rossz kapcsolatot azonnal kihagyjuk
+        
+        if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == shapes[c2].get_shape():
+            shape = shapes[c1].get_shape()
+            if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
+                valid = False
 
-	return true_valid_lines
+        for vonal in valid_lines:
+            con1, con2 = vonal.get_connection1(), vonal.get_connection2()
+
+            if (c1 == con1 and c2 == con2) or (c1 == con2 and c2 == con1):
+
+                current_length = ((line.get_x2() - line.get_x1()) ** 2 + (line.get_y2() - line.get_y1()) ** 2) ** 0.5
+                existing_length = ((vonal.get_x2() - vonal.get_x1()) ** 2 + (vonal.get_y2() - vonal.get_y1()) ** 2) ** 0.5
+
+                if current_length > existing_length:
+                    valid_lines.remove(vonal)
+                    valid = True
+                else:
+                    valid = False
+
+        if valid:
+            valid_lines.append(line)
+
+    # 🔹 Második fázis: Ellenőrizzük a gyenge kapcsolatokat
+    for line in valid_lines:
+        weak1, weak2 = True, True
+        c1, c2 = line.get_connection1(), line.get_connection2()
+        
+        if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
+            for vonal in valid_lines:
+                if vonal.get_connection1() == c1 or vonal.get_connection2() == c1:
+                    if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
+                        if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
+                           shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
+                            weak1 = False
+                if vonal.get_connection1() == c2 or vonal.get_connection2() == c2:
+                    if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
+                        if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
+                           shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
+                            weak2 = False
+        
+        if weak1 or weak2:
+            true_valid_lines.append(line)
+
+    return true_valid_lines
+
 
 def complex_line_checker(valid_lines, lines, shapes):
 	for i in range(0,len(valid_lines)):
@@ -818,7 +828,7 @@ def check_shapes(shapes,lines):
                 if shape.get_id() == line.get_connection2() and line.get_connection1() >= 0:
                     evidence.append(shapes[line.get_connection1()])
             for item in evidence:
-                if item.get_shape() in ["Haromszog", "rhombus;whiteSpace=wrap;html=1;", "ellipse;whiteSpace=wrap;html=1;"]:
+                if item.get_shape() in ["triangle;whiteSpace=wrap;html=1;", "rhombus;whiteSpace=wrap;html=1;", "ellipse;whiteSpace=wrap;html=1;"]:
                     negyzet += 1
                 else:
                     para +=1
