@@ -9,7 +9,7 @@ import pytesseract as pytess
 from matplotlib import pyplot as plt
 import xml.dom.minidom
 from PyQt6.QtCore import Qt 
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QMessageBox, QDialog, QLineEdit
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QMessageBox, QDialog, QLineEdit, QCheckBox
 from PyQt6.QtGui import QPixmap, QImage
 
 class TextEditDialog(QDialog):
@@ -17,32 +17,44 @@ class TextEditDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Szöveg ellenőrzése")
 
-        self.text_edit = QLineEdit(self)  # 🔹 Egy soros szövegmező
-        self.text_edit.setText(initial_text)
-
         # A kapott ROI képet konvertáljuk Qt formátumba
         height, width = roi_image.shape
         bytes_per_line = width
         q_image = QImage(roi_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
         pixmap = QPixmap.fromImage(q_image)
+        
+        # 🔹 Egy soros szövegmező
+        self.text_edit = QLineEdit(self)
+        self.text_edit.setText(initial_text)
 
         self.image_label = QLabel(self)
         self.image_label.setPixmap(pixmap)
+        
+        self.underlined_checkbox = QCheckBox("Aláhúzott (Underlined)")
+        self.double_checkbox = QCheckBox("Dupla vonalas (Double)")
 
         self.ok_button = QPushButton("OK", self)
         self.ok_button.clicked.connect(self.accept)
 
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Felismert szöveg:"))
-        layout.addWidget(self.text_edit)
         layout.addWidget(QLabel("Ellenőrzött kép:"))
         layout.addWidget(self.image_label)
+        layout.addWidget(QLabel("Felismert szöveg:"))
+        layout.addWidget(self.text_edit)
+        layout.addWidget(self.underlined_checkbox)
+        layout.addWidget(self.double_checkbox)
         layout.addWidget(self.ok_button)
 
         self.setLayout(layout)
 
     def get_text(self):
-        return self.text_edit.text()  # 🔹 QLineEdit-ből így kapjuk meg a szöveget
+        return self.text_edit.text()
+    
+    def get_underlined(self):
+        return self.underlined_checkbox.isChecked()
+
+    def get_double(self):
+        return self.double_checkbox.isChecked()
 
 
 class EKtoDrawioApp(QWidget):
@@ -50,7 +62,7 @@ class EKtoDrawioApp(QWidget):
 	avrg_intensity = 0
  
 	class Element:
-		def __init__(self,id, x, y, width, height, shape, text="nothing"):
+		def __init__(self,id, x, y, width, height, shape, text="", underlined = False, double = False):
 			self._id = id
 			self._x = x
 			self._y = y
@@ -58,6 +70,8 @@ class EKtoDrawioApp(QWidget):
 			self._height = height
 			self._shape = shape
 			self._text = text
+			self._underlined = underlined
+			self._double = double
 			
 		def get_id(self):
 			return self._id
@@ -100,6 +114,20 @@ class EKtoDrawioApp(QWidget):
 
 		def set_text(self, value):
 			self._text = value
+
+		def get_underlined(self):
+			return self._underlined
+
+		def set_underlined(self, value):
+			self._underlined = value
+   
+		def get_double(self):
+			return self._double
+
+		def set_double(self, value):
+			self._double = value
+   
+   
 	class Line:
 		def __init__(self,id,  x1, y1, x2, y2,connection1, connection2, line_type,pointing_at=-1):
 			self._id = id
@@ -848,17 +876,25 @@ class EKtoDrawioApp(QWidget):
 		ET.SubElement(root, "mxCell", id="1", parent="0")
 
 		for elem in shapes:
-			mxCell = ET.SubElement(
-				root, 
-				"mxCell", 
-				attrib={
-					"id": str(elem.get_id() + 2),
-					"value": elem.get_text(),
-					"style": elem.get_shape(),
-					"vertex": "1",
-					"parent": "1"
-				}
-			)
+			cell_attrib = {
+				"id": str(elem.get_id() + 2),
+				"value": elem.get_text(),
+				"style": elem.get_shape(),
+				"vertex": "1",
+				"parent": "1"	
+			}
+			if elem.get_underlined():
+				cell_attrib["style"] += "fontStyle=4;"
+    
+			if elem.get_double():
+				if elem.get_shape() == "rounded=0;whiteSpace=wrap;html=1;" :
+					cell_attrib["style"] = "shape=ext;margin=3;double=1;whiteSpace=wrap;html=1;align=center;"
+				elif elem.get_shape() == "rhombus;whiteSpace=wrap;html=1;" :
+					cell_attrib["style"] = "shape=rhombus;double=1;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;align=center;"
+				elif elem.get_shape() == "ellipse;whiteSpace=wrap;html=1;" :
+					cell_attrib["style"] = "ellipse;shape=doubleEllipse;margin=3;whiteSpace=wrap;html=1;align=center;"
+       
+			mxCell = ET.SubElement(root,"mxCell", attrib=cell_attrib)
 			ET.SubElement(
 				mxCell, 
 				"mxGeometry", 
@@ -971,9 +1007,13 @@ class EKtoDrawioApp(QWidget):
 
 			if result == QDialog.DialogCode.Accepted:
 				clean_text = dialog.get_text()  # Az új szöveg betöltése
+				underlined = dialog.get_underlined()
+				double = dialog.get_double()
     
 			elem.set_text(clean_text)
-	
+			elem.set_underlined(underlined)
+			elem.set_double(double)
+
 	def __init__(self):
 		super().__init__()
 
@@ -1001,6 +1041,7 @@ class EKtoDrawioApp(QWidget):
 			"<br> 5. Ha egy vonalat vissza akarunk vezetni az eredeti testre, elsőnek távolodjon el a testtől, majd húzzon egyenes vonalat,"
 			"<br> ha kell több lépésben."
 			"<br> 6. A vonalak legyenek kellően hosszúak, és ne legyen bennük törés, szakadékosság."
+			"<br> 7. Ne érjenek a tesztek és vonalak egybe, legyen kellő távolság köztük."
 		)
 		left_text_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 		left_text_label.setStyleSheet("font-size: 14px;")
