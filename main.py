@@ -214,7 +214,7 @@ class EKtoDrawioApp(QWidget):
 
 		_, binary_filled = cv2.threshold(gray_filled, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
 
-		if avrg_intensity > 210 :
+		if avrg_intensity > 218 :
 				kernel = np.ones((0, 0), np.uint8)
 		else:
 			kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be

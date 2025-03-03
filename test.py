@@ -13,13 +13,14 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushBut
 
 
 # Kép beolvasása
-img_o = cv2.imread('EK1.png')
+#img_o = cv2.imread('EK1.png')
 #img_o = cv2.imread('EK1_O.png')
 #img_o = cv2.imread('EK.png')
 #img_o = cv2.imread('test1.jpg')
 #img_o = cv2.imread('test2.jpg')
 #img_o = cv2.imread('test3.jpg')
-#img_o = cv2.imread('test4.jpg')
+img_o = cv2.imread('test4.jpg')
+#img_o = cv2.imread('test5.jpg')
 
 img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
@@ -177,7 +178,7 @@ def prepare(img):
 	_, binary_filled = cv2.threshold(gray_filled, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
 
 	# Morfológiai nyitás a vékony vonalak eltávolításához
-	if avrg_intensity > 210 :
+	if avrg_intensity > 218 :
 		kernel = np.ones((0, 0), np.uint8)
 	else:
 		kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
