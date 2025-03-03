@@ -13,12 +13,13 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushBut
 
 
 # Kép beolvasása
-#img_o = cv2.imread('EK1.png')
+img_o = cv2.imread('EK1.png')
 #img_o = cv2.imread('EK1_O.png')
+#img_o = cv2.imread('EK.png')
 #img_o = cv2.imread('test1.jpg')
 #img_o = cv2.imread('test2.jpg')
 #img_o = cv2.imread('test3.jpg')
-img_o = cv2.imread('test4.jpg')
+#img_o = cv2.imread('test4.jpg')
 
 img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
@@ -146,7 +147,7 @@ class Line:
 
     	
 def prepare(img):
-    	# Szürkeárnyalatos kép létrehozása
+    # Szürkeárnyalatos kép létrehozása
 	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
  
 	avrg_intensity = gray.mean() *0.9
@@ -176,7 +177,10 @@ def prepare(img):
 	_, binary_filled = cv2.threshold(gray_filled, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
 
 	# Morfológiai nyitás a vékony vonalak eltávolításához
-	kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
+	if avrg_intensity > 210 :
+		kernel = np.ones((0, 0), np.uint8)
+	else:
+		kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
 	opened = cv2.morphologyEx(binary_filled, cv2.MORPH_OPEN, kernel)
 
 
@@ -207,7 +211,7 @@ def fix_mistake(im, gray):
         
 			roi = masked[y:y+h, x:x+w]
    
-			avrg_for_inner = gray.mean()
+			avrg_for_inner = gray.mean() * 0.97
 			print(f"Inner contour Average: {avrg_for_inner}")
 
 
@@ -472,61 +476,67 @@ def associate_lines_to_shapes(lines_data, shapes_list):
     return lines_data
 
 def validate_lines(lines, shapes):
-    valid_lines = []
-    true_valid_lines = []  
-    
-    for line in lines:
-        valid = True
-        c1, c2 = line.get_connection1(), line.get_connection2()
-        
-        if c1 == c2:
-            valid = False
-            continue  # Rossz kapcsolatot azonnal kihagyjuk
-        
-        if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == shapes[c2].get_shape():
-            shape = shapes[c1].get_shape()
-            if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
-                valid = False
+	valid_lines = []
+	true_valid_lines = []  
 
-        for vonal in valid_lines:
-            con1, con2 = vonal.get_connection1(), vonal.get_connection2()
+	for line in lines:
+		valid = True
+		c1, c2 = line.get_connection1(), line.get_connection2()
+		
+		if c1 == c2:
+			valid = False
+			continue  # Rossz kapcsolatot azonnal kihagyjuk
+		
+		if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == shapes[c2].get_shape():
+			shape = shapes[c1].get_shape()
+			if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
+				valid = False
+				
+		if shapes[c1].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
+			valid = False
+			
+		if shapes[c2].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
+			valid = False
 
-            if (c1 == con1 and c2 == con2) or (c1 == con2 and c2 == con1):
+		for vonal in valid_lines:
+			con1, con2 = vonal.get_connection1(), vonal.get_connection2()
 
-                current_length = ((line.get_x2() - line.get_x1()) ** 2 + (line.get_y2() - line.get_y1()) ** 2) ** 0.5
-                existing_length = ((vonal.get_x2() - vonal.get_x1()) ** 2 + (vonal.get_y2() - vonal.get_y1()) ** 2) ** 0.5
+			if (c1 == con1 and c2 == con2) or (c1 == con2 and c2 == con1):
 
-                if current_length > existing_length:
-                    valid_lines.remove(vonal)
-                    valid = True
-                else:
-                    valid = False
+				current_length = ((line.get_x2() - line.get_x1()) ** 2 + (line.get_y2() - line.get_y1()) ** 2) ** 0.5
+				existing_length = ((vonal.get_x2() - vonal.get_x1()) ** 2 + (vonal.get_y2() - vonal.get_y1()) ** 2) ** 0.5
 
-        if valid:
-            valid_lines.append(line)
+				if current_length > existing_length:
+					valid_lines.remove(vonal)
+					valid = True
+				else:
+					valid = False
 
-    # 🔹 Második fázis: Ellenőrizzük a gyenge kapcsolatokat
-    for line in valid_lines:
-        weak1, weak2 = True, True
-        c1, c2 = line.get_connection1(), line.get_connection2()
-        
-        if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
-            for vonal in valid_lines:
-                if vonal.get_connection1() == c1 or vonal.get_connection2() == c1:
-                    if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
-                        if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
-                           shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
-                            weak1 = False
-                if vonal.get_connection1() == c2 or vonal.get_connection2() == c2:
-                    if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
-                        if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
-                           shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
-                            weak2 = False
-        
-        if weak1 or weak2:
-            true_valid_lines.append(line)
+		if valid:
+			valid_lines.append(line)
 
-    return true_valid_lines
+	# 🔹 Második fázis: Ellenőrizzük a gyenge kapcsolatokat
+	for line in valid_lines:
+		weak1, weak2 = True, True
+		c1, c2 = line.get_connection1(), line.get_connection2()
+		
+		if c1 >= 0 and c2 >= 0 and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
+			for vonal in valid_lines:
+				if vonal.get_connection1() == c1 or vonal.get_connection2() == c1:
+					if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
+						if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
+							shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
+							weak1 = False
+				if vonal.get_connection1() == c2 or vonal.get_connection2() == c2:
+					if vonal.get_connection1() >= 0 and vonal.get_connection2() >= 0:
+						if shapes[vonal.get_connection1()].get_shape() != "ellipse;whiteSpace=wrap;html=1;" or \
+							shapes[vonal.get_connection2()].get_shape() != "ellipse;whiteSpace=wrap;html=1;":
+							weak2 = False
+		
+		if weak1 or weak2:
+			true_valid_lines.append(line)
+
+	return true_valid_lines
 
 
 def complex_line_checker(valid_lines, lines, shapes):

@@ -214,7 +214,10 @@ class EKtoDrawioApp(QWidget):
 
 		_, binary_filled = cv2.threshold(gray_filled, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
 
-		kernel = np.ones((0, 0), np.uint8)
+		if avrg_intensity > 210 :
+				kernel = np.ones((0, 0), np.uint8)
+		else:
+			kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
 		opened = cv2.morphologyEx(binary_filled, cv2.MORPH_OPEN, kernel)
 
 		result = cv2.bitwise_not(opened)
@@ -241,7 +244,7 @@ class EKtoDrawioApp(QWidget):
 			
 				roi = masked[y:y+h, x:x+w]
 	
-				avrg_for_inner = gray.mean()
+				avrg_for_inner = gray.mean() *0.97
 
 
 				_, roi_thresh = cv2.threshold(roi, avrg_for_inner, 255, cv2.THRESH_BINARY_INV)
@@ -500,6 +503,12 @@ class EKtoDrawioApp(QWidget):
 				shape = shapes[c1].get_shape()
 				if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
 					valid = False
+     
+			if shapes[c1].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
+					valid = False
+				
+			if shapes[c2].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
+				valid = False
 
 			for vonal in valid_lines:
 				con1, con2 = vonal.get_connection1(), vonal.get_connection2()
