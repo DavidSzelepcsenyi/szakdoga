@@ -314,7 +314,7 @@ class EKtoDrawioApp(QWidget):
 						shape = "rounded=0;whiteSpace=wrap;html=1;"
 					else:
 						shape = "rounded=0;whiteSpace=wrap;html=1;"
-				elif len(angles) == 4 and abs(angles[0] - angles[2]) < 10 and abs(angles[1] - angles[3]) < 10:
+				elif len(angles) == 4 and abs(angles[0] - angles[2]) < 5 and abs(angles[1] - angles[3]) < 5:
 					shape = "rhombus;whiteSpace=wrap;html=1;"
 				else:
 					shape = "vmi4"

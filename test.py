@@ -17,7 +17,8 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushBut
 #img_o = cv2.imread('EK1_O.png')
 #img_o = cv2.imread('test1.jpg')
 #img_o = cv2.imread('test2.jpg')
-img_o = cv2.imread('test3.jpg')
+#img_o = cv2.imread('test3.jpg')
+img_o = cv2.imread('test4.jpg')
 
 img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
@@ -145,7 +146,7 @@ class Line:
 
     	
 def prepare(img):
-	# Szürkeárnyalatos kép létrehozása
+    	# Szürkeárnyalatos kép létrehozása
 	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
  
 	avrg_intensity = gray.mean() *0.9
@@ -175,7 +176,7 @@ def prepare(img):
 	_, binary_filled = cv2.threshold(gray_filled, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
 
 	# Morfológiai nyitás a vékony vonalak eltávolításához
-	kernel = np.ones((0, 0), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
+	kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
 	opened = cv2.morphologyEx(binary_filled, cv2.MORPH_OPEN, kernel)
 
 
@@ -227,7 +228,6 @@ def fix_mistake(im, gray):
 					cv2.drawContours(roi, [inside_contour], -1, (0, 0, 0), thickness=cv2.FILLED)
 
 			masked[y:y+h, x:x+w] = roi  # Az eredeti kép megfelelő részének felülírása
-   
 
 	return masked
 
