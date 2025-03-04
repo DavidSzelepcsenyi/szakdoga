@@ -16,10 +16,11 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushBut
 #img_o = cv2.imread('EK1.png')
 #img_o = cv2.imread('EK1_O.png')
 #img_o = cv2.imread('EK.png')
+img_o = cv2.imread('EK_IDK.png')
 #img_o = cv2.imread('test1.jpg')
 #img_o = cv2.imread('test2.jpg')
 #img_o = cv2.imread('test3.jpg')
-img_o = cv2.imread('test4.jpg')
+#img_o = cv2.imread('test4.jpg')
 #img_o = cv2.imread('test5.jpg')
 
 img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
@@ -202,12 +203,13 @@ def fix_mistake(im, gray):
  
 	for contour in contours:
 		area = cv2.contourArea(contour)
-		print(f"area:{area}")
 		if min_area < int(area) < max_area:
+			print(f"area:{area}")
 			cv2.drawContours(masked, [contour], -1, (255, 255, 255), thickness=cv2.FILLED)
 			x, y, w, h = cv2.boundingRect(contour)
-			max_area = area * 2.6
-		else:
+			max_area = area * 3.2
+		elif area > min_area:
+			print(f"area that needs fixing:{area}")
 			x, y, w, h = cv2.boundingRect(contour)
         
 			roi = masked[y:y+h, x:x+w]

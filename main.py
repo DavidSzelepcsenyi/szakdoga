@@ -238,8 +238,8 @@ class EKtoDrawioApp(QWidget):
 			if min_area < int(area) < max_area:
 				cv2.drawContours(masked, [contour], -1, (255, 255, 255), thickness=cv2.FILLED)
 				x, y, w, h = cv2.boundingRect(contour)
-				max_area = area * 2.6
-			else:
+				max_area = area * 3.2
+			elif area > min_area:
 				x, y, w, h = cv2.boundingRect(contour)
 			
 				roi = masked[y:y+h, x:x+w]
