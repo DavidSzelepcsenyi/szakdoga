@@ -1,0 +1,29 @@
+Nyitó oldalak
+Feladatkiírás
+Tartalmi összefoglaló
+Tartalomjegyzék
+Bevezetés
+Felhasznált eszközök
+Menjünk végig a kód részein
+-osztályok
+-előkészítés és hibajavítás
+-alakzatok meghatározása, és annak részei
+-előkészítés a vonalak keresésére
+-vonalkeresés és annak részei
+-vonalak és tesztek asszociációja
+-a vonalak validálása
+-komplex vonalak
+-nyilak és a segédfüggvényei
+-hibás alakzatok meghatározása
+-xml készítés
+-szöveg észlelés
+-GUI elemek
+Összegzés
+Irodalomjegyzék
+Nyilatkozat
+Köszönetnyilvánítás
+
+
+Ötletek:
+Ábrák egy kép feldolgázásának folyamatáról.
+Régebbi hibás ábrák, beszéljünk a hibákról és a megoldásokról
