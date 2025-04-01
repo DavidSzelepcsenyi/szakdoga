@@ -23,7 +23,7 @@ class TextEditDialog(QDialog):
         q_image = QImage(roi_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
         pixmap = QPixmap.fromImage(q_image)
         
-        # 🔹 Egy soros szövegmező
+        # Egy soros szövegmező
         self.text_edit = QLineEdit(self)
         self.text_edit.setText(initial_text)
 
@@ -1040,7 +1040,7 @@ class EKtoDrawioApp(QWidget):
 		title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 		title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
 
-		# Bal oldali szöveg (szabályok)
+		# Szabályok balra
 		left_text_label = QLabel(
 			"A program rendes működése csak bizonyos feltételek mellett biztosított."
 			"<br> 1. A diagram csak az EK diagram szokásos elemeit tartalmazza."
@@ -1050,7 +1050,7 @@ class EKtoDrawioApp(QWidget):
 			"<br> 5. Ha egy vonalat vissza akarunk vezetni az eredeti testre, elsőnek távolodjon el a testtől, majd húzzon egyenes vonalat,"
 			"<br> ha kell több lépésben."
 			"<br> 6. A vonalak legyenek kellően hosszúak, és ne legyen bennük törés, szakadékosság."
-			"<br> 7. Ne érjenek a tesztek és vonalak egybe, legyen kellő távolság köztük."
+			"<br> 7. Ne érjenek a testek és vonalak egybe, legyen kellő távolság köztük."
 		)
 		left_text_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 		left_text_label.setStyleSheet("font-size: 14px;")
@@ -1096,7 +1096,7 @@ class EKtoDrawioApp(QWidget):
 		img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 		copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 
-		# 🔹 2. Fő lépések végrehajtása
+		# Fő lépések végrehajtása
 		prepared, gray = self.prepare(img)
 		res = self.fix_mistake(prepared, gray)
 		res2, shapes_list = self.determine_shape(res)
@@ -1111,10 +1111,10 @@ class EKtoDrawioApp(QWidget):
 		self.arrow_checker(valid_lines, lines_data, shapes_list)
 
 
-		# 🔹 3. XML generálás
+		# XML generálás
 		self.make_XML(shapes_list, valid_lines, lines_data)
 
-		# 🔹 4. Sikerüzenet
+		# Sikerüzenet
 		QMessageBox.information(self, "Siker", "A fájl feldolgozása befejeződött!\nLétrejött a result.drawio fájl.")
   
 
