@@ -205,7 +205,6 @@ class EKtoDrawioApp(QWidget):
 
 		contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-
 		cv2.drawContours(img, contours, -1, (0, 0, 0), thickness=cv2.FILLED)
 	
 		gray_filled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

@@ -16,8 +16,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushBut
 #img_o = cv2.imread('EK1.png')
 #img_o = cv2.imread('EK1_O.png')
 #img_o = cv2.imread('EK.png')
-img_o = cv2.imread('EK_IDK.png')
-#img_o = cv2.imread('test1.jpg')
+img_o = cv2.imread('test1.jpg')
 #img_o = cv2.imread('test2.jpg')
 #img_o = cv2.imread('test3.jpg')
 #img_o = cv2.imread('test4.jpg')
@@ -159,6 +158,10 @@ def prepare(img):
 	# Binarizálás inverz küszöbértékesítéssel
 	_, thresh = cv2.threshold(gray, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
  
+	cv2.imshow('thresh', thresh)
+	cv2.waitKey(0) 
+	cv2.destroyAllWindows() 
+ 
 
 	# Kontúrok megtalálása
 	contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -178,12 +181,20 @@ def prepare(img):
 
 	_, binary_filled = cv2.threshold(gray_filled, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
 
+	cv2.imshow('Binary', binary_filled)
+	cv2.waitKey(0) 
+	cv2.destroyAllWindows() 
+
 	# Morfológiai nyitás a vékony vonalak eltávolításához
 	if avrg_intensity > 218 :
 		kernel = np.ones((0, 0), np.uint8)
 	else:
 		kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
 	opened = cv2.morphologyEx(binary_filled, cv2.MORPH_OPEN, kernel)
+
+	cv2.imshow('Opened', opened)
+	cv2.waitKey(0) 
+	cv2.destroyAllWindows() 
 
 
 	# Inverz küszöbértékesítés a háttér és az alakzatok visszaállításához
@@ -197,6 +208,10 @@ def fix_mistake(im, gray):
 	mask = cv2.threshold(im, 1, 255, cv2.THRESH_BINARY_INV)[1]
 	masked = cv2.bitwise_and(gray, gray, mask=mask)
 	contours, _ = cv2.findContours(masked, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+ 
+	cv2.imshow('Masked', masked)
+	cv2.waitKey(0) 
+	cv2.destroyAllWindows() 
  
 	min_area = 200  # Az alsó határ a kontúrok területére
 	max_area = 30000  # Felső határ, ha van ilyen szükség szerint
@@ -213,6 +228,10 @@ def fix_mistake(im, gray):
 			x, y, w, h = cv2.boundingRect(contour)
         
 			roi = masked[y:y+h, x:x+w]
+
+			cv2.imshow('Area that needs fixing', roi)
+			cv2.waitKey(0) 
+			cv2.destroyAllWindows() 
    
 			avrg_for_inner = gray.mean() * 0.97
 			print(f"Inner contour Average: {avrg_for_inner}")
@@ -226,13 +245,17 @@ def fix_mistake(im, gray):
 
 			for inside_contour in inside_contours:
 				inside_area = cv2.contourArea(inside_contour)
-				
+
 				# Ha a belső kontúr területe megfelel a megadott határoknak, fehérre festjük
 				if 500 < inside_area < max_area:
 					cv2.drawContours(roi, [inside_contour], -1, (255, 255, 255), thickness=cv2.FILLED)
 				else:
 					# A fennmaradó részeket feketére festjük
 					cv2.drawContours(roi, [inside_contour], -1, (0, 0, 0), thickness=cv2.FILLED)
+     
+			cv2.imshow('Fixed area', roi)
+			cv2.waitKey(0) 
+			cv2.destroyAllWindows() 
 
 			masked[y:y+h, x:x+w] = roi  # Az eredeti kép megfelelő részének felülírása
 
