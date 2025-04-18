@@ -13,14 +13,13 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushBut
 
 
 # Kép beolvasása
-#img_o = cv2.imread('EK1.png')
 #img_o = cv2.imread('EK1_O.png')
 #img_o = cv2.imread('EK.png')
-img_o = cv2.imread('test1.jpg')
+#img_o = cv2.imread('test1.jpg')
 #img_o = cv2.imread('test2.jpg')
 #img_o = cv2.imread('test3.jpg')
 #img_o = cv2.imread('test4.jpg')
-#img_o = cv2.imread('test5.jpg')
+img_o = cv2.imread('test5.jpg')
 
 img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
@@ -269,73 +268,69 @@ def angle_between(p1, p2, p3):
     return np.degrees(angle)
 
 def determine_shape(image):
-    blurred = cv2.GaussianBlur(image, (5, 5), 0)
-    _, threshold = cv2.threshold(blurred, 127, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	blurred = cv2.GaussianBlur(image, (5, 5), 0)
+	_, threshold = cv2.threshold(blurred, 127, 255, cv2.THRESH_BINARY)
+	contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    shapes = []
-    id = 0
+	shapes = []
+	id = 0
 
-    for contour in contours:
-        if cv2.contourArea(contour) < 500:  # Szűrés a kis zajos kontúrokra
-            continue
+	for contour in contours:
+		if cv2.contourArea(contour) < 500:  # Szűrés a kis zajos kontúrokra
+			continue
 
-        # Alapvető approximáció
-        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
+		# Alapvető approximáció
+		approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
 
-        # Az összes pont elemzése az oldalak kiszámításához
-        contour_points = contour.squeeze()
-        side_lengths = []
-        for i in range(len(contour_points)):
-            p1 = contour_points[i]
-            p2 = contour_points[(i + 1) % len(contour_points)]
-            side_lengths.append(cv2.norm(p1 - p2))
+		# Az összes pont elemzése az oldalak kiszámításához
+		contour_points = contour.squeeze()
+		side_lengths = []
+		for i in range(len(contour_points)):
+			p1 = contour_points[i]
+			p2 = contour_points[(i + 1) % len(contour_points)]
+			side_lengths.append(cv2.norm(p1 - p2))
 
-        # Az átlók és a szögek számítása
-        angles = []
-        for i in range(len(approx)):
-            p1 = approx[i - 2][0]
-            p2 = approx[i - 1][0]
-            p3 = approx[i][0]
-            angle = angle_between(p1, p2, p3)
-            angles.append(angle)
+		# Az átlók és a szögek számítása
+		angles = []
+		for i in range(len(approx)):
+			p1 = approx[i - 2][0]
+			p2 = approx[i - 1][0]
+			p3 = approx[i][0]
+			angle = angle_between(p1, p2, p3)
+			angles.append(angle)
 
-        x, y, w, h = cv2.boundingRect(contour)
-        M = cv2.moments(contour)
-        if M["m00"] != 0:
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
+		x, y, w, h = cv2.boundingRect(contour)
 
-        shape = "Ismeretlen"
-        if len(approx) == 3:
-            shape = "triangle;whiteSpace=wrap;html=1;"
-        elif 5>= len(approx) >= 4:
-            # Paralelogramma vagy téglalap/négyszög
-            if all(85 <= angle <= 95 for angle in angles[:4]):  # Téglalap/négyszög
-                if abs(side_lengths[0] - side_lengths[2]) < 10 and abs(side_lengths[1] - side_lengths[3]) < 10:
-                    shape = "rounded=0;whiteSpace=wrap;html=1;"
-                else:
-                    shape = "rounded=0;whiteSpace=wrap;html=1"
-            elif len(angles) == 4 and abs(angles[0] - angles[2]) < 10 and abs(angles[1] - angles[3]) < 10:
-                shape = "rhombus;whiteSpace=wrap;html=1;"
-            else:
-                shape = "vmi4"
-        elif len(approx) > 5:
-            shape = "ellipse;whiteSpace=wrap;html=1;"
+		shape = "Ismeretlen"
+		if len(approx) == 3:
+			shape = "triangle;whiteSpace=wrap;html=1;"
+		elif 5>= len(approx) >= 4:
+			# Paralelogramma vagy téglalap/négyszög
+			if all(85 <= angle <= 95 for angle in angles[:4]):  # Téglalap/négyszög
+				if abs(side_lengths[0] - side_lengths[2]) < 10 and abs(side_lengths[1] - side_lengths[3]) < 10:
+					shape = "rounded=0;whiteSpace=wrap;html=1;"
+				else:
+					shape = "rounded=0;whiteSpace=wrap;html=1"
+			elif len(angles) == 4 and abs(angles[0] - angles[2]) < 10 and abs(angles[1] - angles[3]) < 10:
+				shape = "rhombus;whiteSpace=wrap;html=1;"
+			else:
+				shape = "vmi4"
+		elif len(approx) > 5:
+			shape = "ellipse;whiteSpace=wrap;html=1;"
 
-        elem = Element(id, x, y, w, h, shape, "")
-        shapes.append(elem)
+		elem = Element(id, x, y, w, h, shape, "")
+		shapes.append(elem)
 
-        # Rajz és debug, írd át str(id)-t shape-re ha tesztelni akarod az alakzat felismerest
-        cv2.drawContours(image, [contour], -1, (0, 255, 0), 2)
-        cv2.putText(image, str(id), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-        
-        id += 1
+		# Rajz és debug, írd át str(id)-t shape-re ha tesztelni akarod az alakzat felismerest
+		cv2.drawContours(image, [contour], -1, (0, 255, 0), 2)
+		cv2.putText(image, str(id), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+		
+		id += 1
 
-    return image, shapes
+	return image, shapes
 
  
-def remove_shapes(image, list):
+def remove_shapes(image, list, gray):
     
 	for element in list:
      
@@ -354,7 +349,46 @@ def remove_shapes(image, list):
 	threshold_value = gray.mean() * 0.8
 	_, binary_image = cv2.threshold(image, threshold_value, 255, cv2.THRESH_BINARY)
  
-	return binary_image
+	cv2.imshow('Lines', binary_image) 
+	cv2.waitKey(0) 
+	cv2.destroyAllWindows() 
+	
+	# Konvertálás szürkeárnyalatba
+	grayed = cv2.cvtColor(binary_image, cv2.COLOR_BGR2GRAY)
+	blurred = cv2.GaussianBlur(grayed, (5, 5), 0)
+
+	# Adaptív küszöbölés
+	adaptive_thresh = cv2.adaptiveThreshold(
+		blurred, 255,
+		cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+		cv2.THRESH_BINARY_INV,
+		11, 2 
+	)
+
+	cv2.imshow('Adaptiv', adaptive_thresh)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
+	# **Zajcsökkentés: morfológiai műveletekkel tisztítjuk a képet**
+	kernel = np.ones((3, 3), np.uint8)
+	adaptive_thresh = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+	adaptive_thresh = cv2.dilate(adaptive_thresh, kernel, iterations=1)
+	adaptive_thresh = cv2.erode(adaptive_thresh, kernel, iterations=1)
+
+	# **Kisebb zajok eltávolítása**
+	contours, _ = cv2.findContours(adaptive_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	min_contour_area = 20  # Kisebb zajok eltávolítása
+	for contour in contours:
+		if cv2.contourArea(contour) < min_contour_area:
+			cv2.drawContours(adaptive_thresh, [contour], -1, 0, thickness=cv2.FILLED)
+
+	# Debug: Megnézzük a zajszűrés utáni képet
+
+	cv2.imshow('Adaptiv Kuszoboles', adaptive_thresh)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
+	return adaptive_thresh
 
 def calculate_angle(x1, y1, x2, y2):
     return math.degrees(math.atan2(y2 - y1, x2 - x1))
@@ -382,7 +416,7 @@ def merge_lines(lines, start, distance_threshold=20, angle_threshold=15):
             dist2 = math.sqrt((x2 - mx1) ** 2 + (y2 - my1) ** 2)
 
             # Ha a vonalak elég közel vannak ÉS hasonló szögben futnak, összekötjük őket
-            if (dist1 < distance_threshold or dist2 < distance_threshold) and abs(angle1 - angle2) < angle_threshold:
+            if (dist1 < distance_threshold or dist2 < distance_threshold ) and abs(angle1 - angle2) < angle_threshold:
                 # A két vonalat egy vonallá olvasztjuk
                 merged_line.set_x1(min(x1, mx1))
                 merged_line.set_y1(min(y1, my1))
@@ -402,40 +436,10 @@ def merge_lines(lines, start, distance_threshold=20, angle_threshold=15):
 
 
 def find_lines(image, shapes):
-    # Konvertálás szürkeárnyalatba
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     
-    # Adaptív küszöbölés
-    adaptive_thresh = cv2.adaptiveThreshold(
-        blurred, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV,
-        11, 2 
-    )
-
-	# **Zajcsökkentés: morfológiai műveletekkel tisztítjuk a képet**
-    kernel = np.ones((3, 3), np.uint8)
-    adaptive_thresh = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
-    adaptive_thresh = cv2.dilate(adaptive_thresh, kernel, iterations=1)
-    adaptive_thresh = cv2.erode(adaptive_thresh, kernel, iterations=1)
-
-    # **Kisebb zajok eltávolítása**
-    contours, _ = cv2.findContours(adaptive_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    min_contour_area = 20  # Kisebb zajok eltávolítása
-    for contour in contours:
-        if cv2.contourArea(contour) < min_contour_area:
-            cv2.drawContours(adaptive_thresh, [contour], -1, 0, thickness=cv2.FILLED)
-
-    # Debug: Megnézzük a zajszűrés utáni képet
-
-    cv2.imshow('Adaptiv Kuszoboles', adaptive_thresh)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
     # Hough vonalérzékelés
     lines = cv2.HoughLinesP(
-        adaptive_thresh, 
+        image, 
         rho=1, 
         theta=np.pi / 180, 
         threshold=10, 
@@ -864,7 +868,13 @@ def check_shapes(shapes,lines):
                 if shape.get_id() == line.get_connection2() and line.get_connection1() >= 0:
                     evidence.append(shapes[line.get_connection1()])
             for item in evidence:
-                if item.get_shape() in ["triangle;whiteSpace=wrap;html=1;", "rhombus;whiteSpace=wrap;html=1;", "ellipse;whiteSpace=wrap;html=1;"]:
+                if item.get_shape == "rhombus;whiteSpace=wrap;html=1;":
+                    shape.set_shape("rounded=0;whiteSpace=wrap;html=1;")
+                    break
+                elif item.get_shape == "rounded=0;whiteSpace=wrap;html=1;":
+                    shape.set_shape("rhombus;whiteSpace=wrap;html=1;")
+                    break
+                elif item.get_shape() in ["triangle;whiteSpace=wrap;html=1;", "rhombus;whiteSpace=wrap;html=1;", "ellipse;whiteSpace=wrap;html=1;"]:
                     negyzet += 1
                 else:
                     para +=1
@@ -1048,11 +1058,8 @@ cv2.imshow('Shapes Determined', res)
 cv2.waitKey(0) 
 cv2.destroyAllWindows() 
 
-lines = remove_shapes(copy, shapes_list)
+lines = remove_shapes(copy, shapes_list, gray)
 
-cv2.imshow('Lines', lines) 
-cv2.waitKey(0) 
-cv2.destroyAllWindows() 
 lines_data = []
 lines_data = find_lines(lines, shapes_list)
 

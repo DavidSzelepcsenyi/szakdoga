@@ -301,10 +301,6 @@ class EKtoDrawioApp(QWidget):
 				angles.append(angle)
 
 			x, y, w, h = cv2.boundingRect(contour)
-			M = cv2.moments(contour)
-			if M["m00"] != 0:
-				cx = int(M["m10"] / M["m00"])
-				cy = int(M["m01"] / M["m00"])
 
 			shape = "Ismeretlen"
 			if len(approx) == 3:
@@ -348,8 +344,32 @@ class EKtoDrawioApp(QWidget):
 	
 		threshold_value = gray.mean() * 0.8
 		_, binary_image = cv2.threshold(image, threshold_value, 255, cv2.THRESH_BINARY)
+  
+		grayed = cv2.cvtColor(binary_image, cv2.COLOR_BGR2GRAY)
+		blurred = cv2.GaussianBlur(grayed, (5, 5), 0)
+		
+
+		adaptive_thresh = cv2.adaptiveThreshold(
+			blurred, 255,
+			cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+			cv2.THRESH_BINARY_INV,
+			11, 2 
+		)
+
+
+		kernel = np.ones((3, 3), np.uint8)
+		adaptive_thresh = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+		adaptive_thresh = cv2.dilate(adaptive_thresh, kernel, iterations=1)
+		adaptive_thresh = cv2.erode(adaptive_thresh, kernel, iterations=1)
+
+
+		contours, _ = cv2.findContours(adaptive_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		min_contour_area = 20
+		for contour in contours:
+			if cv2.contourArea(contour) < min_contour_area:
+				cv2.drawContours(adaptive_thresh, [contour], -1, 0, thickness=cv2.FILLED)
 	
-		return binary_image
+		return adaptive_thresh
 
 	def calculate_angle(self, x1, y1, x2, y2):
      
@@ -394,34 +414,9 @@ class EKtoDrawioApp(QWidget):
 
 	def find_lines(self, image, shapes):
 
-		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-		blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-		
-
-		adaptive_thresh = cv2.adaptiveThreshold(
-			blurred, 255,
-			cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-			cv2.THRESH_BINARY_INV,
-			11, 2 
-		)
-
-
-		kernel = np.ones((3, 3), np.uint8)
-		adaptive_thresh = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
-		adaptive_thresh = cv2.dilate(adaptive_thresh, kernel, iterations=1)
-		adaptive_thresh = cv2.erode(adaptive_thresh, kernel, iterations=1)
-
-
-		contours, _ = cv2.findContours(adaptive_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-		min_contour_area = 20
-		for contour in contours:
-			if cv2.contourArea(contour) < min_contour_area:
-				cv2.drawContours(adaptive_thresh, [contour], -1, 0, thickness=cv2.FILLED)
-
-
 
 		lines = cv2.HoughLinesP(
-			adaptive_thresh, 
+			image, 
 			rho=1, 
 			theta=np.pi / 180, 
 			threshold=10, 
