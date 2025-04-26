@@ -1,0 +1,21 @@
+# --- Python által generált fájlok ---
+__pycache__/
+*.py[cod]
+*.pyo
+
+# --- Virtuális környezet ---
+.venv/
+
+# --- Build kimenetek ---
+build/
+dist/
+*.spec
+
+# --- IDE beállítások (ha használsz ilyet) ---
+.idea/
+.vscode/
+
+# --- Log fájlok, ideiglenes fájlok ---
+*.log
+*.cache
+*.lock
