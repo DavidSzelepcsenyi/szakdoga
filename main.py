@@ -30,8 +30,8 @@ class TextEditDialog(QDialog):
         self.image_label = QLabel(self)
         self.image_label.setPixmap(pixmap)
         
-        self.underlined_checkbox = QCheckBox("Aláhúzott (Underlined)")
-        self.double_checkbox = QCheckBox("Dupla vonalas (Double)")
+        self.underlined_checkbox = QCheckBox("Aláhúzott/ Kulcs érték")
+        self.double_checkbox = QCheckBox("Dupla vonal/ Gyenge egyed")
 
         self.ok_button = QPushButton("OK", self)
         self.ok_button.clicked.connect(self.accept)
@@ -498,11 +498,6 @@ class EKtoDrawioApp(QWidget):
 				if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
 					valid = False
      
-			if shapes[c1].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
-					valid = False
-				
-			if shapes[c2].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
-				valid = False
 
 			for vonal in valid_lines:
 				con1, con2 = vonal.get_connection1(), vonal.get_connection2()
@@ -1030,7 +1025,7 @@ class EKtoDrawioApp(QWidget):
 		layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
 		# Cím középen
-		title_label = QLabel("Szabályok")
+		title_label = QLabel("Tippek pontos eredményhez:")
 		title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 		title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
 

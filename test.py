@@ -521,17 +521,17 @@ def validate_lines(lines, shapes):
 			shape = shapes[c1].get_shape()
 			if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
 				valid = False
-				
+		"""
 		if shapes[c1].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c2].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
 			valid = False
 			
 		if shapes[c2].get_shape() == "rhombus;whiteSpace=wrap;html=1;" and shapes[c1].get_shape() == "ellipse;whiteSpace=wrap;html=1;":
 			valid = False
-
+		"""
 		for vonal in valid_lines:
 			con1, con2 = vonal.get_connection1(), vonal.get_connection2()
 
-			if (c1 == con1 and c2 == con2) or (c1 == con2 and c2 == con1):
+			if c1 == con1 and c2 == con2 or c1 == con2 and c2 == con1:
 
 				current_length = ((line.get_x2() - line.get_x1()) ** 2 + (line.get_y2() - line.get_y1()) ** 2) ** 0.5
 				existing_length = ((vonal.get_x2() - vonal.get_x1()) ** 2 + (vonal.get_y2() - vonal.get_y1()) ** 2) ** 0.5
