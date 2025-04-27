@@ -37,7 +37,7 @@ class TextEditDialog(QDialog):
         self.ok_button.clicked.connect(self.accept)
 
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Ellenőrzött kép:"))
+        layout.addWidget(QLabel("Vizsgált elem:"))
         layout.addWidget(self.image_label)
         layout.addWidget(QLabel("Felismert szöveg:"))
         layout.addWidget(self.text_edit)
@@ -198,25 +198,18 @@ class EKtoDrawioApp(QWidget):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	
 		avrg_intensity = gray.mean() *0.9
-
-
 		_, thresh = cv2.threshold(gray, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
-	
-
 		contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 		cv2.drawContours(img, contours, -1, (0, 0, 0), thickness=cv2.FILLED)
-	
 		gray_filled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	
-
-
 		_, binary_filled = cv2.threshold(gray_filled, avrg_intensity, 255, cv2.THRESH_BINARY_INV)
 
 		if avrg_intensity > 218 :
 				kernel = np.ones((0, 0), np.uint8)
 		else:
-			kernel = np.ones((7, 7), np.uint8)  # A kernel méretét a vonalak eltávolításához állítsd be
+			kernel = np.ones((7, 7), np.uint8)
 		opened = cv2.morphologyEx(binary_filled, cv2.MORPH_OPEN, kernel)
 
 		result = cv2.bitwise_not(opened)
@@ -244,7 +237,6 @@ class EKtoDrawioApp(QWidget):
 				roi = masked[y:y+h, x:x+w]
 	
 				avrg_for_inner = gray.mean() *0.97
-
 
 				_, roi_thresh = cv2.threshold(roi, avrg_for_inner, 255, cv2.THRESH_BINARY_INV)
 
@@ -279,9 +271,8 @@ class EKtoDrawioApp(QWidget):
 		id = 0
 
 		for contour in contours:
-			if cv2.contourArea(contour) < 500:
+			if cv2.contourArea(contour) <300:
 				continue
-
 
 			approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
 
@@ -348,14 +339,12 @@ class EKtoDrawioApp(QWidget):
 		grayed = cv2.cvtColor(binary_image, cv2.COLOR_BGR2GRAY)
 		blurred = cv2.GaussianBlur(grayed, (5, 5), 0)
 		
-
 		adaptive_thresh = cv2.adaptiveThreshold(
 			blurred, 255,
 			cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
 			cv2.THRESH_BINARY_INV,
 			11, 2 
 		)
-
 
 		kernel = np.ones((3, 3), np.uint8)
 		adaptive_thresh = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
@@ -414,7 +403,6 @@ class EKtoDrawioApp(QWidget):
 
 	def find_lines(self, image, shapes):
 
-
 		lines = cv2.HoughLinesP(
 			image, 
 			rho=1, 
@@ -450,7 +438,6 @@ class EKtoDrawioApp(QWidget):
 
 			for elem in shapes_list:
 				eID, ex, ey, ew, eh = elem.get_id(), elem.get_x(), elem.get_y(), elem.get_width(), elem.get_height()
-
 
 				x_range = np.arange(ex, ex + ew)
 				y_range = np.arange(ey, ey + eh)
@@ -814,8 +801,6 @@ class EKtoDrawioApp(QWidget):
 							v.set_pointing_at(checking_shape)
 							
 
-
-
 	def check_shapes(self,shapes,lines):
 		for shape in shapes:
 			evidence = []
@@ -995,7 +980,6 @@ class EKtoDrawioApp(QWidget):
 										[-1, 5, -1],
 										[0, -1, 0]])
 
-
 			sharp = cv2.filter2D(roi, -1, sharpening_kernel)
 
 			text = pytess.image_to_string(sharp)
@@ -1015,7 +999,6 @@ class EKtoDrawioApp(QWidget):
 	def __init__(self):
 		super().__init__()
 
-
 		self.setWindowTitle("E-K to Drawio")
 		self.setFixedSize(600, 500)
 		self.uploaded_file_path = None  # Feltöltött fájl nyomon követése
@@ -1029,7 +1012,7 @@ class EKtoDrawioApp(QWidget):
 		title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 		title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
 
-		# Szabályok balra
+		# Tippek balra
 		left_text_label = QLabel(
 			"A program rendes működése csak bizonyos feltételek mellett biztosított."
 			"<br> 1. A diagram csak az EK diagram szokásos elemeit tartalmazza."
@@ -1068,7 +1051,7 @@ class EKtoDrawioApp(QWidget):
 
 	def upload_file(self):
 		file_dialog = QFileDialog()
-		file_path, _ = file_dialog.getOpenFileName(self, "Válassz egy fájlt")
+		file_path, _ = file_dialog.getOpenFileName(self, "Válasszon egy fájlt")
 
 		if file_path:  # Ha a felhasználó választott fájlt
 			self.uploaded_file_path = file_path
@@ -1080,7 +1063,7 @@ class EKtoDrawioApp(QWidget):
 			QMessageBox.warning(self, "Hiba", "Nincs feltöltött fájl!")
 			return
 
-		# 🔹 1. Kép beolvasása
+		# Kép beolvasása
 		img_o = cv2.imread("img")
 		img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 		copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
