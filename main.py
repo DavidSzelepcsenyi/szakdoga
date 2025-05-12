@@ -235,7 +235,7 @@ class EKtoDrawioApp(QWidget):
 				x, y, w, h = cv2.boundingRect(contour)
 			
 				roi = masked[y:y+h, x:x+w]
-	
+
 				avrg_for_inner = gray.mean() *0.97
 
 				_, roi_thresh = cv2.threshold(roi, avrg_for_inner, 255, cv2.THRESH_BINARY_INV)
@@ -484,7 +484,7 @@ class EKtoDrawioApp(QWidget):
 				shape = shapes[c1].get_shape()
 				if shape not in ["ellipse;whiteSpace=wrap;html=1;", "vmi4", "Ismeretlen"]:
 					valid = False
-     
+
 
 			for vonal in valid_lines:
 				con1, con2 = vonal.get_connection1(), vonal.get_connection2()
@@ -991,7 +991,7 @@ class EKtoDrawioApp(QWidget):
 				clean_text = dialog.get_text()  # Az új szöveg betöltése
 				underlined = dialog.get_underlined()
 				double = dialog.get_double()
-    
+
 			elem.set_text(clean_text)
 			elem.set_underlined(underlined)
 			elem.set_double(double)
