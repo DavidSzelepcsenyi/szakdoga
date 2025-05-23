@@ -147,7 +147,6 @@ class Line:
 
     	
 def prepare(img):
-    # Szürkeárnyalatos kép létrehozása
 	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
  
 	avrg_intensity = gray.mean() *0.9

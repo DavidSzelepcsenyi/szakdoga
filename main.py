@@ -17,13 +17,11 @@ class TextEditDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Szöveg ellenőrzése")
 
-        # A kapott ROI képet konvertáljuk Qt formátumba
         height, width = roi_image.shape
         bytes_per_line = width
         q_image = QImage(roi_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
         pixmap = QPixmap.fromImage(q_image)
         
-        # Egy soros szövegmező
         self.text_edit = QLineEdit(self)
         self.text_edit.setText(initial_text)
 
@@ -985,10 +983,10 @@ class EKtoDrawioApp(QWidget):
 			text = pytess.image_to_string(sharp)
 			clean_text = text.replace("\n", " ").replace("\r", " ")
 			dialog = TextEditDialog(roi, clean_text)
-			result = dialog.exec()  # Ez blokkolja a futást, amíg a felhasználó nem nyom OK-t
+			result = dialog.exec()
 
 			if result == QDialog.DialogCode.Accepted:
-				clean_text = dialog.get_text()  # Az új szöveg betöltése
+				clean_text = dialog.get_text()
 				underlined = dialog.get_underlined()
 				double = dialog.get_double()
 
@@ -1001,18 +999,16 @@ class EKtoDrawioApp(QWidget):
 
 		self.setWindowTitle("E-K to Drawio")
 		self.setFixedSize(600, 500)
-		self.uploaded_file_path = None  # Feltöltött fájl nyomon követése
+		self.uploaded_file_path = None
 
-		# Fő elrendezés
+
 		layout = QVBoxLayout()
 		layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-		# Cím középen
 		title_label = QLabel("Tippek pontos eredményhez:")
 		title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 		title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
 
-		# Tippek balra
 		left_text_label = QLabel(
 			"A program rendes működése csak bizonyos feltételek mellett biztosított."
 			"<br> 1. A diagram csak az EK diagram szokásos elemeit tartalmazza."
@@ -1027,48 +1023,43 @@ class EKtoDrawioApp(QWidget):
 		left_text_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 		left_text_label.setStyleSheet("font-size: 14px;")
 
-		# Fájlfeltöltő gomb
 		upload_button = QPushButton("Fájl feltöltése")
 		upload_button.clicked.connect(self.upload_file)
 
-		# Feltöltött fájl nevét mutató címke
 		self.file_label = QLabel("Nincs feltöltött fájl")
 		self.file_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 		
-		# Konvertálás gomb
 		convert_button = QPushButton("Konvertálás")
 		convert_button.clicked.connect(self.process_file)
 
-		# Elemek hozzáadása az elrendezéshez
-		layout.addWidget(title_label)  # Cím
-		layout.addWidget(left_text_label)  # Bal oldali szöveg (szabályok)
-		layout.addWidget(upload_button)  # Fájlfeltöltő gomb
-		layout.addWidget(self.file_label)  # Feltöltött fájl neve
-		layout.addWidget(convert_button)  # Konvertálás gomb
+		layout.addWidget(title_label)
+		layout.addWidget(left_text_label)
+		layout.addWidget(upload_button)
+		layout.addWidget(self.file_label)
+		layout.addWidget(convert_button)
 
-		# Beállítjuk az elrendezést az ablakra
+
 		self.setLayout(layout)
 
 	def upload_file(self):
 		file_dialog = QFileDialog()
 		file_path, _ = file_dialog.getOpenFileName(self, "Válasszon egy fájlt")
 
-		if file_path:  # Ha a felhasználó választott fájlt
+		if file_path:
 			self.uploaded_file_path = file_path
-			shutil.copy(file_path, "img")  # Másolás "img" néven
-			self.file_label.setText(f"Feltöltött fájl: {file_path.split('/')[-1]}")  # Megjeleníti a fájl nevét
+			shutil.copy(file_path, "img")
+			self.file_label.setText(f"Feltöltött fájl: {file_path.split('/')[-1]}")
 
 	def process_file(self):
 		if not self.uploaded_file_path:
 			QMessageBox.warning(self, "Hiba", "Nincs feltöltött fájl!")
 			return
 
-		# Kép beolvasása
+
 		img_o = cv2.imread("img")
 		img = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 		copy = cv2.resize(img_o, (770, 512), fx=1.0, fy=1.0)
 
-		# Fő lépések végrehajtása
 		prepared, gray = self.prepare(img)
 		res = self.fix_mistake(prepared, gray)
 		res2, shapes_list = self.determine_shape(res)
@@ -1083,16 +1074,13 @@ class EKtoDrawioApp(QWidget):
 		self.arrow_checker(valid_lines, lines_data, shapes_list)
 
 
-		# XML generálás
 		self.make_XML(shapes_list, valid_lines, lines_data)
 
-		# Sikerüzenet
 		QMessageBox.information(self, "Siker", "A fájl feldolgozása befejeződött!\nLétrejött a result.drawio fájl.")
   
 
 
   
-# Alkalmazás indítása
 app = QApplication(sys.argv)
 window = EKtoDrawioApp()
 window.show()
