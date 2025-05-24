@@ -1010,10 +1010,9 @@ class EKtoDrawioApp(QWidget):
 		title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
 
 		left_text_label = QLabel(
-			"A program rendes működése csak bizonyos feltételek mellett biztosított."
 			"<br> 1. A diagram csak az EK diagram szokásos elemeit tartalmazza."
 			"<br> 2. A diagram fekete tollal, fehér lapra legyen rajzolva, és csak a diagram legyen a lapon."
-			"<br> 3. A lap másik oldalról ne üssön át más."
+			"<br> 3. A lap másik oldaláról ne üssön át más."
 			"<br> 4. A vonalak minél pontosabbak és egyenesebbek legyenek, vonalzó használata javasolt."
 			"<br> 5. Ha egy vonalat vissza akarunk vezetni az eredeti testre, elsőnek távolodjon el a testtől, majd húzzon egyenes vonalat,"
 			"<br> ha kell több lépésben."
